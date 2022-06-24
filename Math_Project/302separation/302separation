@@ -1,0 +1,73 @@
+#!/usr/bin/python3
+#Benjamin RAYMOND
+
+import sys, math, os
+from get_element import *
+from algo_matrice import *
+
+def usage():
+    print("USAGE")
+    print("\t./302separation file [n | p1 p2]")
+    print("DESCRIPTION")
+    print("file \tfile that contains the list of Facebook connections")
+    print("n \tmaximum length of the paths")
+    print("pi \tname of someone in the file")
+ 
+
+def parthing():
+    """Parthin file, and implement program"""
+    ### Parthing file
+    fd = open(sys.argv[1], "r")
+    file = open(sys.argv[1], "r")
+    lines = fd.read().rstrip()
+    tab = lines.split("\n")
+    ### Obtain names
+    names = getNames(tab)
+    Friends1 = get_Friend1(tab)
+    Friends2 = get_Friend2(file)
+    if len(sys.argv) == 4:
+        his_name = sys.argv[2] #Person1
+        his_friend = sys.argv[3] #Person2
+    #Obtain Friend
+    ###Core
+        if (check_name(his_name, names) is True and check_friend(his_friend, names) is True):
+            pass
+        matrix(names, Friends1, Friends2, his_name, his_friend, len_argv = 4, nb = len(names) ** 2)
+    if len(sys.argv) == 3:
+        his_name = ""
+        his_friend = ""
+        len_argv = 3
+        try:
+            nb = int(sys.argv[2])
+        except:
+            print("2 argument must be integer")
+            exit(84)
+        if (nb < 0):
+            exit(84)
+        matrix(names, Friends1, Friends2, his_name, his_friend, len_argv, nb)
+    if len(sys.argv) == 1:
+        print("Not enough arguments")
+        exit(84)
+
+def main():
+    try:
+        if len(sys.argv) > 2 and len(sys.argv) <= 4:
+            if len(sys.argv) == 3:
+                if not (os.path.isfile(sys.argv[1])):
+                    print(sys.argv[1])
+                    print("この名前は存在しません")
+                    exit(84)
+                parthing()
+            if len(sys.argv) == 4:
+                parthing()
+        elif len(sys.argv) == 2 and sys.argv[1] == "-h":
+                usage()
+        else:
+            print("Error math")
+            exit (84)
+    except:
+        exit(84)
+ 
+if __name__ == "__main__":
+    main()
+    pass

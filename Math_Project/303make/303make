@@ -1,0 +1,201 @@
+#!/usr/bin/python3
+#Benjamin RAYMOND, Clement SAUNIER
+
+import sys, math, os
+from math import *
+
+# Gets alphabetical list of all symbols
+def get_symbols(datas):
+    symbols = set()
+    alphabeticalSymbols = []
+
+    for data in (datas):
+        symbols.add(data[0]);
+        for dependence in data[1]:
+            symbols.add(dependence);
+    for sym in symbols:
+        alphabeticalSymbols.append(sym)
+    alphabeticalSymbols.sort()
+    return (alphabeticalSymbols)
+
+# Gets list of depencencies
+def get_dependencies(symbol, datas):
+    for data in datas:
+        if data[0] == symbol:
+            return data[1]
+
+# Gets list of 0/1 indicating dependence
+def get_dependency_array(symbol, symbols, depencencies):
+    dependency_array = [0] * len(symbols)
+
+    if depencencies:
+        for dependency in depencencies:
+            dependency_array[symbols.index(dependency)] = 1
+    return (dependency_array)
+
+# Revert the matrix
+def revert_matrix(matrix):
+    reverted = []
+
+    for x in range(len(matrix)):
+        array = []
+        for y in range(len(matrix)):
+            array.append(matrix[y][x])
+        reverted.append(array)
+    return (reverted)
+
+# Gets the adjacency matrix
+def get_matrix(data):
+    symbols = get_symbols(data)
+    matrix = []
+
+    for symbol in symbols:
+        dependencies = get_dependencies(symbol, data)
+        matrix.append(get_dependency_array(symbol, symbols, dependencies))
+    return (revert_matrix(matrix))
+
+# Prints the matrix
+def print_matrix(matrix):
+    for array in matrix:
+        print('[', end='')
+        for i, value in enumerate(array):
+            print(value, end=(' ' if i != len(array) - 1 else ''))
+        print(']')
+
+# Gets maximum dependency depth
+def get_max_dependency_depth(dependencies):
+    print("dependency depth usage")
+    lengths = set()
+    for dependency in dependencies:
+        lengths.add(len(dependency))
+    return lengths[-1]
+
+# Gets the symbols dependent of symbol
+def get_dependent_symbols(symbol, symbols, array):
+    dependent_symbols = []
+    for i, value in enumerate(array):
+        if value == 1:
+            dependent_symbols.append(symbols[i])
+    return (dependent_symbols)
+
+# Gets the dependency strings of the symbol
+def get_dependency_strings(symbol, symbols, matrix):
+    array = matrix[symbols.index(symbol)]
+    dependent_symbols = get_dependent_symbols(symbol, symbols, array)
+    dependency_strings = []
+
+    if (len(dependent_symbols) == 0):
+        return ([[symbol]])
+    for i, dependent in enumerate(dependent_symbols):
+        string = [symbol]
+        for s in get_dependency_strings(dependent, symbols, matrix):
+            dependency_strings.append(string + s)
+    return dependency_strings
+
+# Prints the dependency strings of each symbol
+def print_dependency_strings(symbols, matrix):
+    for symbol in symbols:
+        dependency_strings = get_dependency_strings(symbol, symbols, matrix)
+        for strings in dependency_strings:
+            if len(strings) == 1:
+                continue
+            print(" -> ".join(strings))
+
+### INCOMPLETE
+
+def get_command(symbol, datas):
+    for data in datas:
+        if data[0] == symbol:
+            return data[2]
+
+# Gets the command to run when element is changed
+def get_commands(symbol, symbols, datas, matrix):
+    commands = []
+    direct_dependency = symbol
+
+    if symbol.endswith(".c"):
+        direct_dependency = symbol.split('.')[0] + ".o"
+        commands.append(get_command(direct_dependency, datas))
+    array = matrix[symbols.index(direct_dependency)]
+    dependent_symbols = get_dependent_symbols(direct_dependency, symbols, array)
+    for dependent in dependent_symbols:
+        commands.append(get_command(dependent, datas))
+    for dependent in dependent_symbols:
+        for command in get_commands(dependent, symbols, datas, matrix):
+            if command not in commands:
+                commands.append(command)
+    return (commands)
+
+def parsing(file):
+    data = []
+    fd = open(file)
+    for line in fd:
+        line.strip("\n").split("#")[0]
+        define_line = line.find(":")
+        if define_line >= 0:
+            name = line.split(':')[0]
+            dependence = line.split(':')[1]
+            dependence = dependence.split(' ')
+            dependence = [x.replace('\n', '') for x in dependence]
+            dependence.pop(0)
+        if define_line < 0:
+            line = line.rstrip('\n')
+            data.append((name, dependence, line))
+    return data
+
+def usage():
+    print("USAGE")
+    print("./303make makefile [file]")
+    print("DESCRIPTION")
+    print("\tmakefile name of the makefile")
+    print("\tfile name of a recently modified file")
+
+def show_adjencency(data):
+    matrix = get_matrix(data)
+    symbols = get_symbols(data)
+    array = matrix[symbols.index(symbols[0])]
+
+    print_matrix(matrix)
+    print()
+    print_dependency_strings(symbols, matrix)
+
+def show_commands(data, symbol):
+    matrix = get_matrix(data)
+    symbols = get_symbols(data)
+
+    try:
+        index = symbols.index(symbol)
+    except:
+        print("Invalid input"), exit(84)
+    dependencies = get_dependency_strings(symbol, symbols, matrix)
+    commands = get_commands(symbol, symbols, data, matrix)
+    if len(commands) == 0:
+        print()
+    else:
+        for command in commands:
+            print(command)
+
+def main():
+    arglen = len(sys.argv)
+
+    if not (arglen >= 2 and arglen <= 3):
+        print(("Not enough" if arglen < 2 else "Too many") + " arguments")
+        exit(84)
+    if sys.argv[1] == '-h':
+        usage()
+    elif os.path.exists(sys.argv[1]):
+        if os.stat(sys.argv[1]).st_size == 0:
+            print('File is empty')
+            exit(84)
+        if arglen == 2:
+            show_adjencency(parsing(sys.argv[1]))
+        else:
+            show_commands(parsing(sys.argv[1]), sys.argv[2])
+    else:
+        print("File does not exist")
+        exit(84)
+
+
+if __name__ == "__main__":
+    main()
+    pass

@@ -1,0 +1,80 @@
+#!/usr/bin/python3
+#Benjamin RAYMOND, Clement SAUNIER
+
+import sys, os, csv
+from math import factorial
+
+
+def display_usage():
+    print("USAGE")
+    print("\t./309pollution n file x y")
+    print("DESCRIPTION")
+    print("n\t\t number of points on the grid axis")
+    print("file\t\t csv file containing the data points x;y;p")
+    print("x\t\t abscissa of the point whose pollution level we want to know")
+    print("y\t\t ordinate of the point whose pollution level we want to know")
+
+def polynomial(n, k, p):
+    b = int(factorial(n) / (factorial(k) * factorial(n - k)))
+    if k != 0:
+        np = pow(p,k)
+    else:
+        np = 1
+    if (n - k) != 0:
+        poky = pow((1 - p), (n - k))
+    else:
+        poky = 1 
+    return (b * np * poky)
+
+def bezier_surface(x, y, M, size):
+    result = 0
+    for i in range(size + 1):
+        for j in range(size + 1):
+            z = polynomial(size, i, y)
+            z *= polynomial(size, j, x)
+            z *= M[i][j]
+            result += z
+    print("{:.2f}".format(result)) 
+
+def parsing(args):
+    n = int(args[1])
+    x = float(args[3])
+    y = float(args[4])
+    x /= n - 1
+    y /= n - 1
+    points_list = []
+    if n < 0 or x < 0 or y < 0 or n < y or n < x:
+        print("Bad argument")
+        exit(84)
+    try:
+        with open(args[2], newline='') as csvfile:
+            fileLine = csv.reader(csvfile, delimiter=';')
+            for line in fileLine:
+                points_list.append([int(line[0]), int(line[1]), int(line[2])])
+                if int(line[0]) < 0 or int(line[0]) > n - 1 or int(line[1]) < 0 or int(line[1]) > n - 1:
+                    exit(84)
+    except BaseException as error:
+            sys.stderr.write(str(type(error).__name__) + ": {}\n".format(error))
+            exit(84)
+    matrice = []
+    for i in range(0, n):
+        matrice.append([0] * n)
+    for point in points_list:
+        matrice[point[1]][point[0]] = point[2]
+    return x, y, matrice, n -1
+    
+
+def main():
+    arglen = len(sys.argv)
+    if arglen == 2 and sys.argv[1] == '-h':
+        display_usage()
+    if arglen == 5:
+        x, y, M, n = parsing(sys.argv)
+        bezier_surface(x, y, M, n)  
+    else:
+        print(("Not enough" if arglen <= 5 else "Too many") + " arguments")
+        exit(84)
+
+if __name__ == "__main__":
+    main()
+    pass
